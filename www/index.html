@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="/css/basic.css">
+    <script src="/js/jquery/jquery-3.6.0.min.js"></script>
+    <script src="/js/function.js"></script>
+    <style>
+        .login-html {
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+            top: 20px;
+            background-color: #303030;
+            width: 600px;
+            height: 800px;
+            padding: 100px 80px;
+            box-sizing: border-box;
+            font-family: 'Open Sans', sans-serif;
+            font-weight: bold;
+            text-align: left;
+            color: #d6d6d6;
+            box-shadow: 3px 3px 10px #303030;
+            overflow: hidden;
+        }
+
+        .sign-title {
+            position: relative;
+            user-select: none;
+            color: #d6d6d650;
+            display: inline-block;
+            margin-right: 20px;
+            cursor: pointer;
+        }
+
+        .sign-title::after {
+            --height: 3px;
+            content: '';
+            display: block;
+            position: absolute;
+            background-color: #006effb3;
+            width: 0;
+            left: 0;
+            bottom: 0;
+            transition: 500ms;
+            height: var(--height);
+        }
+
+        .sign-title[select=true]::after {
+            width: 100%;
+        }
+
+        .sign-title[select=true] {
+            color: #d6d6d6;
+        }
+
+        .button-sign {
+            user-select: none;
+            --height: 50px;
+            position: relative;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100%;
+            text-align: center;
+            height: var(--height);
+            border-radius: var(--height);
+            line-height: var(--height);
+            cursor: pointer;
+            font-weight: 100;
+            font-size: 20px;
+            box-shadow: 3px 3px 10px #303030;
+            margin-top: 40px;
+            margin-bottom: 80px;
+            transition: 1s;
+        }
+
+        .button-sign::before {
+            content: '';
+            position: absolute;
+            left: 50%;
+            transition: 1s;
+            transform: translateX(-50%);
+            background-color: #505050;
+            width: 100%;
+            height: 100%;
+            border-radius: var(--height);
+            z-index: -1;
+        }
+
+        input:hover,
+        .sign-title:hover {
+            transform: scale(1.05);
+        }
+
+        .password-forgot:hover {
+            color: rgba(255, 255, 255, 0.4);
+        }
+
+        .button-sign:hover {
+            text-shadow: 0 0 5px #fff3dc;
+            color: #fff3dc;
+        }
+
+        .button-sign:hover::before {
+            width: 130px;
+            border: 1px solid black;
+        }
+
+        .password-forgot {
+            text-align: center;
+            font-size: 20px;
+            color: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            margin-top: 50px;
+            transition: 500ms;
+        }
+
+        .content {
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+
+        .sign-box {
+            position: absolute;
+            width: 100%;
+            transition: 1s;
+        }
+
+        .sign-box[show=false] {
+            opacity: 0;
+            pointer-events: none;
+            user-select: none;
+            transform: skewX(90deg);
+        }
+    </style>
+    <title>Home</title>
+</head>
+
+<body>
+    <div class="login-html">
+        <div class="sign-title" id="sign-in" select=true>SIGN IN</div>
+        <div class="sign-title" id="sign-up" select=false>SIGN UP</div>
+        <div class="content">
+            <!-- 登入介面 -->
+            <div class="sign-box" id="sign-in-box" show=true>
+                <div class="input">
+                    <div class="input-title">ACCOUNT OR EMAIL</div>
+                    <div class="input-error"></div>
+                    <div class="input-type">
+                        <input type="email" id="sign-in-account" name="account" maxlength="255">
+                    </div>
+                </div>
+                <div class="input">
+                    <div class="input-title">PASSWORD</div>
+                    <div class="input-error"></div>
+                    <div class="input-type">
+                        <input type="password" id="sign-in-password" name="password" maxlength="45">
+                    </div>
+                </div>
+                <div class="button-sign" id="button-sign-in">SIGN IN</div>
+                <hr>
+                <div class="password-forgot">FORGOT　PASSWORD</div>
+            </div>
+            <!-- 註冊介面 -->
+            <div class="sign-box" id="sign-up-box" show=false>
+                <div class="input">
+                    <div class="input-title">NAME</div>
+                    <div class="input-error"></div>
+                    <div class="input-type">
+                        <input type="text" name='name' maxlength="25">
+                    </div>
+                </div>
+                <div class="input">
+                    <div class="input-title">ACCOUNT</div>
+                    <div class="input-error"></div>
+                    <div class="input-type">
+                        <input type="text" name='account' maxlength="45">
+                    </div>
+                </div>
+                <div class="input">
+                    <div class="input-title">PASSWORD</div>
+                    <div class="input-error"></div>
+                    <div class="input-type">
+                        <input type="password" name='password' maxlength="45">
+                    </div>
+                </div>
+                <div class="input">
+                    <div class="input-title">EMAIL</div>
+                    <div class="input-error"></div>
+                    <div class="input-type">
+                        <input type="email" name='email' maxlength="255">
+                    </div>
+                </div>
+                <div class="button-sign" id="button-sign-up">SIGN UP</div>
+            </div>
+        </div>
+    </div>
+    <script>
+        function Bool(bool) {
+            return bool.toLowerCase() === 'true';
+        }
+        function ReBool(bool) {
+            return !Bool(bool);
+        }
+        function attrToggle(jquery, attr) {
+            const $self = $(jquery);
+            $self.attr(attr, ReBool($self.attr(attr)));
+        }
+        $('.sign-title').click(e => { // 轉換登入、註冊頁面
+            const self = $(e.target);
+            if (Bool(self.attr('select'))) return;
+            attrToggle('#sign-in', 'select');
+            attrToggle('#sign-up', 'select');
+            attrToggle('#sign-in-box', 'show');
+            attrToggle('#sign-up-box', 'show');
+        });
+        $('#button-sign-in').click(() => {
+            let foundError = false;
+            let data = {};
+            $('#sign-in-box div.input').each((i, e) => {
+                let $input = $($(e).find('input'));
+                let input_type = $input.attr('type');
+                let input_name = $input.attr('name');
+                let $error = $($(e).children('.input-error'));
+                let val = $input.val().trim();
+                if (val === '') {
+                    foundError = true;
+                    $error.text('資料不能為空');
+                } else if (input_type === 'email' && val.includes('@') && !isEmail(val)) {
+                    foundError = true;
+                    $error.text('電子郵件格式錯誤');
+                } else if (!foundError) {
+                    data[input_name] = val;
+                    $error.text('');
+                }
+            });
+            if (foundError) return;
+            $.post('/login', data).done(() => {
+                location.reload();
+            }).fail(error => {
+                if (error.status === 401) { // 輸入資料錯誤
+                    let res = JSON.parse(error.responseText);
+                    $('#sign-in-box .input-error:eq(0)').text(res.account); // 帳號
+                    $('#sign-in-box .input-error:eq(1)').text(res.password); // 密碼
+                } else if (error.status === 500) { // 伺服器錯誤
+                    let $sign_in_error = $('#sign-in-box div.input div.input-error');
+                    $sign_in_error.each((i, e) => {
+                        $(e).text(error.responseText);
+                    });
+                }
+            });
+        });
+        $('#button-sign-up').click(() => {
+            let foundError = false;
+            let data = {};
+            $('#sign-up-box div.input').each((i, e) => {
+                let $input = $($(e).find('input'));
+                let input_type = $input.attr('type');
+                let input_name = $input.attr('name');
+                let $error = $($(e).children('.input-error'));
+                let val = $input.val().trim();
+                if (val === '') {
+                    foundError = true;
+                    $error.text('資料不能為空');
+                } else if (input_type === 'email' && !isEmail(val)) {
+                    foundError = true;
+                    $error.text('電子郵件格式錯誤');
+                } else if (!foundError) {
+                    data[input_name] = val;
+                    $error.text('');
+                }
+            });
+            if (foundError) return;
+            $.post('/register', data).done(() => {
+                console.log('註冊成功');
+            }).fail(error => {
+                if (error.status === 401) { // 輸入資料錯誤
+                    let errorText = JSON.parse(error.responseText);
+                    $('#sign-up-box .input-error:eq(0)').text(errorText.name); // 姓名
+                    $('#sign-up-box .input-error:eq(1)').text(errorText.account); // 帳號
+                    $('#sign-up-box .input-error:eq(2)').text(errorText.password); // 密碼
+                    $('#sign-up-box .input-error:eq(3)').text(errorText.email); // 信箱
+                }
+            });
+        })
+    </script>
+</body>
+
+</html>
