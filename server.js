@@ -1,11 +1,12 @@
+'use strict';
 const express = require('express');
 const bp = require('body-parser'); // Post
 const ejs = require('ejs');
 const session = require('express-session');
 const obj = require('./configs/object.js');
 const msl = require('./configs/mysqli.js');
-const Data = require('./configs/data.js');
-const { json } = require('express');
+const bcrypt = require('bcrypt'); // 密碼加密
+const { check, validationResult } = require('express-validator'); // 資料驗證
 
 const app = express();
 const Port = 80;
@@ -40,6 +41,14 @@ app.get('/backdoor', (req, res) => { // 後門
 })
 
 app.get('/', (req, res) => {
+    req.session.user = {
+        name: '後門使用者',
+        account: '後門使用者',
+        password: '後門使用者',
+        email: 'backdoor@backdoor.com',
+        id: -1,
+        rank: 2
+    }
     const user = req.session.user;
     if (user) {
         res.render('lobby', user);
@@ -48,56 +57,117 @@ app.get('/', (req, res) => {
     }
 });
 
-app.post('/login', (req, res) => { // 登入
-    let post = req.body;
-    try {
-        let sql = `SELECT * FROM nodejs.user as user WHERE (account LIKE '${post.account}' OR email LIKE '${post.account}') AND password LIKE '${post.password}' LIMIT 1`;
-        db.query(sql, (err, user) => {
-            if (err) throw err;
-            if (user.length) {
-                delete user[0].password;
-                req.session.user = user[0];
-                res.status(200).send();
-            } else { // 登入失敗
-                let sql = `SELECT * FROM nodejs.user as user WHERE account LIKE '${post.account}' OR email LIKE '${post.account}' LIMIT 1`;
-                db.query(sql, (err, data) => {
-                    if (err) throw err;
-                    let ret = {
-                        account: '',
-                        password: ''
-                    }
-                    if (!data.length) ret.account = '帳號錯誤';
-                    else ret.password = '密碼錯誤';
-                    res.status(401).send(JSON.stringify(ret));
-                })
+app.post('/login',
+    check('account')
+        .isLength({ min: 5, max: 45 })
+        .withMessage({ account: '字數5~45' })
+        .matches(/^[a-zA-Z0-9_-]+$/)
+        .withMessage({ account: '只允許a-z、A-Z、0-9、_-' }),
+    check('password')
+        .isLength({ min: 8 })
+        .withMessage({ password: '至少八個字元' })
+        .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,60}$/)
+        .withMessage({ password: '至少一個字母和一個數字' }),
+    async (req, res) => { // 登入
+        let errObject = { error: {} };
+        const checkError = validationResult(req).errors;
+        if (checkError.length) {
+            checkError.forEach(error => errObject.error = Object.assign(errObject.error, error.msg));
+            res.json(errObject);
+            return;
+        }
+
+        const post = req.body;
+        const account = `SELECT * FROM nodejs.user as user WHERE account LIKE '${post.account}'`;
+        let userData = await msl.query(account);
+        if (userData.length) {
+            userData = userData[0];
+            if (bcrypt.compareSync(post.password, userData.password)) {
+                req.session.user = userData; // 密碼正確
+                msl.loginIP(req); // 紀錄登入IP
             }
-        });
-    } catch (err) {
-        res.status(500).send('伺服器錯誤');
-        console.log(err);
+            else errObject.error.password = '密碼錯誤';
+        } else errObject.error.account = '帳號錯誤'
+
+        res.json(errObject);
+    });
+
+app.post('/register',
+    check('name')
+        .isLength({ min: 3, max: 25 })
+        .withMessage({ name: '字數3~25' })
+        .matches(/^[\u4e00-\u9fa5a-zA-Z0-9_-]+$/)
+        .withMessage({ name: '只允許中文、a-z、A-Z、0-9、_-' }),
+    check('account')
+        .isLength({ min: 5, max: 255 })
+        .withMessage({ account: '字數5~255' })
+        .matches(/^[a-zA-Z0-9_-]+$/)
+        .withMessage({ account: '只允許a-z、A-Z、0-9、_-' }),
+    check('password')
+        .isLength({ min: 8 })
+        .withMessage({ password: '至少八個字元' })
+        .matches(/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,60}$/)
+        .withMessage({ password: '至少一個字母和一個數字' }),
+    check('email')
+        .isEmail()
+        .withMessage({ email: '信箱格式錯誤' }),
+    async (req, res) => { // 註冊
+        let errObject = { error: {} };
+        const checkError = validationResult(req).errors;
+        if (checkError.length) {
+            checkError.forEach(error => errObject.error = Object.assign(errObject.error, error.msg));
+            res.json(errObject);
+            return;
+        }
+
+        let post = req.body;
+        const head = 'SELECT * FROM nodejs.user as user WHERE';
+        const account = `${head} account LIKE '${post.account}'`; // 帳號查詢
+        const email = `${head} email LIKE '${post.email}'`; // 信箱重複
+        // 檢查重複
+        try {
+            if (await msl.exist(account, true))
+                errObject.error.account = '帳號重複';
+            if (await msl.exist(email, true))
+                errObject.error.email = '信箱重複';
+            if (obj.isEmpty(errObject.error)) { // 創建使用者
+                const saltRounds = 10;
+                post.password = bcrypt.hashSync(post.password, saltRounds); // 加密
+                post.creat_time = +new Date(); // 帳號創建時間
+                await msl.insert('INSERT INTO nodejs.user', post); // 新增
+                // 登入
+                let userData = await msl.query(`SELECT * FROM nodejs.user as user WHERE account LIKE '${post.account}'`);
+                userData = userData[0];
+                req.session.user = userData;
+                msl.loginIP(req); // 紀錄登入IP
+            }
+        } catch (error) {
+            console.log(error);
+            errObject.error.msg = '未知錯誤';
+        }
+        res.json(errObject);
+    });
+
+app.get('/gameList', (req, res) => { // 取得遊戲列表
+    if (!req.session.user) { // 登入檢查
+        res.redirect('/');
+        return;
     }
+    res.render('gameList');
+})
+
+let Rooms = {
+
+};
+
+app.get('/gameList/NS-SHAFT', (req, res) => { // 小朋友下樓梯
+    if (!req.session.user) { // 登入檢查
+        res.redirect('/');
+        return;
+    }
+    res.render('NS-SHAFT/index');
 });
 
-app.post('/register', (req, res) => { // 註冊
-    let post = req.body;
-    const needKeys = ['account', 'password', 'email', 'name'];
-    if (!obj.haveKeys(post, needKeys)) { // 資料不完整
-        res.status(401).send('資料錯誤');
-        return;
-    } else if (!isEmail(post.email)) { // 電子郵件格式不正確
-        res.status(401).send(JSON.stringify({ email: '格式錯誤' }));
-        return;
-    }
-    let account = `SELECT * FROM nodejs.user as user WHERE account LIKE '${post.account}' LIMIT 1`; // 帳號查詢 sql
-    msl.exist(account, { account: '帳號重複' }).then(() => {
-        let email = `SELECT * FROM nodejs.user as user WHERE email LIKE '${post.email}' LIMIT 1`; // 信箱查詢 sql
-        msl.exist(email, { email: '信箱重複' });
-    }).then(() => res.status(200).send())
-        .catch(err => res.status(401).send(err)); // 查詢回傳錯誤
-});
-
-app.use((req, res) => { // 網址錯誤
-    res.status(404).render('404');
-});
+app.use((req, res) => res.status(404).render('404')); // 網址錯誤
 
 app.listen(Port);

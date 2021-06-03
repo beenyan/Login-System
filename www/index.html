@@ -16,6 +16,7 @@
             top: 20px;
             background-color: #303030;
             width: 600px;
+            max-width: 100vw;
             height: 800px;
             padding: 100px 80px;
             box-sizing: border-box;
@@ -23,8 +24,9 @@
             font-weight: bold;
             text-align: left;
             color: #d6d6d6;
-            box-shadow: 3px 3px 10px #303030;
+            box-shadow: 3px 3px 5px #303030;
             overflow: hidden;
+            transition: 200ms;
         }
 
         .sign-title {
@@ -136,6 +138,24 @@
             user-select: none;
             transform: skewX(90deg);
         }
+
+        @media (max-width: 600px) {
+            .login-html {
+                max-height: 100%;
+                top: 0;
+                padding: 50px 30px;
+            }
+
+            .button-sign:hover::before {
+                width: 100%;
+            }
+        }
+
+        @media (max-width: 800px) {
+            .sign-box[show=false] {
+                transform: rotateY(180deg);
+            }
+        }
     </style>
     <title>Home</title>
 </head>
@@ -147,18 +167,32 @@
         <div class="content">
             <!-- 登入介面 -->
             <div class="sign-box" id="sign-in-box" show=true>
+                <!-- Account -->
                 <div class="input">
-                    <div class="input-title">ACCOUNT OR EMAIL</div>
+                    <div class="input-title">ACCOUNT</div>
                     <div class="input-error"></div>
                     <div class="input-type">
-                        <input type="email" id="sign-in-account" name="account" maxlength="255">
+                        <input autofocus type="text" id="sign-in-account" name="account" pattern="^[a-zA-Z0-9_-]{5,45}$"
+                            required maxlength="45">
+                        <div class="input-information">
+                            Length：5 ~ 45
+                            <hr>
+                            Accept：a-z A-Z 0-9 _-
+                        </div>
                     </div>
                 </div>
+                <!-- Password -->
                 <div class="input">
                     <div class="input-title">PASSWORD</div>
                     <div class="input-error"></div>
                     <div class="input-type">
-                        <input type="password" id="sign-in-password" name="password" maxlength="45">
+                        <input type="password" id="sign-in-password" name="password"
+                            pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,60}$" required maxlength="60">
+                        <div class="input-information">
+                            Length：5 ~ 60
+                            <hr>
+                            Accept：least one letter & one number
+                        </div>
                     </div>
                 </div>
                 <div class="button-sign" id="button-sign-in">SIGN IN</div>
@@ -167,32 +201,54 @@
             </div>
             <!-- 註冊介面 -->
             <div class="sign-box" id="sign-up-box" show=false>
+                <!-- Name -->
                 <div class="input">
                     <div class="input-title">NAME</div>
                     <div class="input-error"></div>
                     <div class="input-type">
-                        <input type="text" name='name' maxlength="25">
+                        <input type="text" name='name' id="sign-up-name" pattern="^[\u4e00-\u9fa5a-zA-Z0-9_-]{3,25}$"
+                            required maxlength="25">
+                        <div class="input-information">
+                            Length：3 ~ 25
+                            <hr>
+                            Accept：中文 a-z A-Z 0-9 _-
+                        </div>
                     </div>
                 </div>
+                <!-- Account -->
                 <div class="input">
                     <div class="input-title">ACCOUNT</div>
                     <div class="input-error"></div>
                     <div class="input-type">
-                        <input type="text" name='account' maxlength="45">
+                        <input type="text" id="sign-up-account" name="account" pattern="^[a-zA-Z0-9_-]{5,45}$" required
+                            maxlength="45">
+                        <div class="input-information">
+                            Length：5 ~ 45
+                            <hr>
+                            Accept：a-z A-Z 0-9 _-
+                        </div>
                     </div>
                 </div>
+                <!-- Password -->
                 <div class="input">
                     <div class="input-title">PASSWORD</div>
                     <div class="input-error"></div>
                     <div class="input-type">
-                        <input type="password" name='password' maxlength="45">
+                        <input type="password" id="sign-up-password" name="password"
+                            pattern="^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,60}$" required maxlength="60">
+                        <div class="input-information">
+                            Length：8 ~ 60
+                            <hr>
+                            Accept：least one letter & one number
+                        </div>
                     </div>
                 </div>
+                <!-- Email -->
                 <div class="input">
                     <div class="input-title">EMAIL</div>
                     <div class="input-error"></div>
                     <div class="input-type">
-                        <input type="email" name='email' maxlength="255">
+                        <input type="email" id="sign-up-email" name='email' required maxlength="255">
                     </div>
                 </div>
                 <div class="button-sign" id="button-sign-up">SIGN UP</div>
@@ -200,6 +256,12 @@
         </div>
     </div>
     <script>
+        $('input').change(e => { // 更新自動填入
+            setTimeout(() => {
+                let input = $(e.target);
+                input.val(input.val());
+            }, 0)
+        })
         function Bool(bool) {
             return bool.toLowerCase() === 'true';
         }
@@ -218,74 +280,49 @@
             attrToggle('#sign-in-box', 'show');
             attrToggle('#sign-up-box', 'show');
         });
-        $('#button-sign-in').click(() => {
+        $('#button-sign-in').click(() => { // 登入
             let foundError = false;
-            let data = {};
-            $('#sign-in-box div.input').each((i, e) => {
-                let $input = $($(e).find('input'));
-                let input_type = $input.attr('type');
-                let input_name = $input.attr('name');
-                let $error = $($(e).children('.input-error'));
-                let val = $input.val().trim();
-                if (val === '') {
-                    foundError = true;
-                    $error.text('資料不能為空');
-                } else if (input_type === 'email' && val.includes('@') && !isEmail(val)) {
-                    foundError = true;
-                    $error.text('電子郵件格式錯誤');
-                } else if (!foundError) {
-                    data[input_name] = val;
-                    $error.text('');
-                }
+            $('#sign-in-box div.input').each((index, div) => {
+                const input = $(div).find('input')[0];
+                const error = $(div).find('.input-error');
+                error.text(input.checkValidity() ? '' : input.validationMessage);
+                foundError = !input.checkValidity() | foundError;
             });
             if (foundError) return;
-            $.post('/login', data).done(() => {
+
+            const data = objectifyForm($('#sign-in-box input'));
+            $.post('/login', data).done(data => {
+                if (!obj.isEmpty(data.error)) {
+                    data = data.error;
+                    $('#sign-in-box .input-error:eq(0)').text(data.account); // 帳號
+                    $('#sign-in-box .input-error:eq(1)').text(data.password); // 密碼
+                    return;
+                }
                 location.reload();
-            }).fail(error => {
-                if (error.status === 401) { // 輸入資料錯誤
-                    let res = JSON.parse(error.responseText);
-                    $('#sign-in-box .input-error:eq(0)').text(res.account); // 帳號
-                    $('#sign-in-box .input-error:eq(1)').text(res.password); // 密碼
-                } else if (error.status === 500) { // 伺服器錯誤
-                    let $sign_in_error = $('#sign-in-box div.input div.input-error');
-                    $sign_in_error.each((i, e) => {
-                        $(e).text(error.responseText);
-                    });
-                }
-            });
+            })
         });
-        $('#button-sign-up').click(() => {
+        $('#button-sign-up').click(() => { // 註冊
             let foundError = false;
-            let data = {};
-            $('#sign-up-box div.input').each((i, e) => {
-                let $input = $($(e).find('input'));
-                let input_type = $input.attr('type');
-                let input_name = $input.attr('name');
-                let $error = $($(e).children('.input-error'));
-                let val = $input.val().trim();
-                if (val === '') {
-                    foundError = true;
-                    $error.text('資料不能為空');
-                } else if (input_type === 'email' && !isEmail(val)) {
-                    foundError = true;
-                    $error.text('電子郵件格式錯誤');
-                } else if (!foundError) {
-                    data[input_name] = val;
-                    $error.text('');
-                }
+            $('#sign-up-box div.input').each((index, div) => {
+                const input = $(div).find('input')[0];
+                const error = $(div).find('.input-error');
+                error.text(input.checkValidity() ? '' : input.validationMessage);
+                foundError = !input.checkValidity() | foundError;
             });
             if (foundError) return;
-            $.post('/register', data).done(() => {
-                console.log('註冊成功');
-            }).fail(error => {
-                if (error.status === 401) { // 輸入資料錯誤
-                    let errorText = JSON.parse(error.responseText);
-                    $('#sign-up-box .input-error:eq(0)').text(errorText.name); // 姓名
-                    $('#sign-up-box .input-error:eq(1)').text(errorText.account); // 帳號
-                    $('#sign-up-box .input-error:eq(2)').text(errorText.password); // 密碼
-                    $('#sign-up-box .input-error:eq(3)').text(errorText.email); // 信箱
+
+            const data = objectifyForm($('#sign-up-box input'));
+            $.post('/register', data).done(data => {
+                if (!obj.isEmpty(data.error)) {
+                    data = data.error;
+                    $('#sign-up-box .input-error:eq(0)').text(data.name); // 姓名
+                    $('#sign-up-box .input-error:eq(1)').text(data.account); // 帳號
+                    $('#sign-up-box .input-error:eq(2)').text(data.password); // 密碼
+                    $('#sign-up-box .input-error:eq(3)').text(data.email); // 信箱
+                    return;
                 }
-            });
+                location.reload();
+            })
         })
     </script>
 </body>

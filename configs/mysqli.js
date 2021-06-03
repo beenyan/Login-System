@@ -1,6 +1,5 @@
 // mysqli
 const mysql = require('mysql');
-const { json } = require('body-parser');
 const db = mysql.createConnection({
     host: 'localhost',
     user: 'root',
@@ -20,25 +19,34 @@ let query = sql => { // 查詢
     })
 }
 
-let insert = sql => { // 新增
+let insert = (sql, key, val = key) => { // 新增
+    const keys = Object.keys(key).join(',');
+    const vals = Object.values(key).join("','");
+    const insert = `${sql} (${keys}) VALUES ('${vals}')`;
     return new Promise((resolve, reject) => {
-        db.insert
-        db.query(sql, (err, res) => {
+        db.query(insert, (err, res) => {
             if (err) reject(err);
             else resolve(res);
         })
     })
 }
 
-let exist = (sql, errorText, isThrew = true) => { // 檢查是否存在此資料 errorText = 錯誤回傳訊息
+let exist = (sql, errorText) => { // 檢查是否存在此資料 errorText = 錯誤回傳訊息
     return new Promise((resolve, reject) => {
         db.query(sql, (err, res) => {
-            if (res.length) {
-                if (isThrew) reject(JSON.stringify(errorText));
-                else resolve(true);
-            } else resolve(false);
-        })
+            if (err) reject(err);
+            else resolve(res.length);
+        });
     })
 }
 
-module.exports = { query, exist };
+
+let loginIP = req => {
+    const login_data = {
+        user_ip: req.ip,
+        user_id: req.session.user.id,
+        time: +new Date(), // 登入時間
+    }
+    insert('INSERT INTO nodejs.`login-log`', login_data); // 新增
+}
+module.exports = { query, insert, exist, loginIP };

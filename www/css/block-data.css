@@ -1,0 +1,25 @@
+.content {
+    width: 90%;
+    height: auto;
+    margin: auto;
+    overflow: hidden;
+}
+
+.name {
+    font-weight: bold;
+}
+
+.list {
+    padding: 30px 10px;
+    box-sizing: border-box;
+    width: 350px;
+    max-width: 80%;
+    height: 500px;
+    display: inline-block;
+    background: linear-gradient(45deg, #303030 0%, #505050 100%);
+    margin: 30px;
+    vertical-align: top;
+    cursor: pointer;
+    box-shadow: 0 15px 20px -15px #24242455,
+        0 35px 50px -25px #292929;
+}
